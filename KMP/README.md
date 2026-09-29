@@ -17,7 +17,7 @@ Add the MMKV KMP package to your shared module:
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-1")
+            implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-2")
         }
     }
 }
@@ -45,7 +45,7 @@ iOS 14.
 消费者只依赖根坐标：
 
 ```text
-com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-1
+com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-2
 ```
 
 Gradle 根据 Kotlin Multiplatform 元数据选择 Android、iOS 或鸿蒙产物，无需直接声明平台产物。
@@ -130,4 +130,6 @@ ANDROID_HOME=/path/to/android-sdk bash KMP/gradlew -p verification-consumer \
 验证 C bridge 读写，可在鸿蒙模拟器执行。
 
 上游 Maven Central 发布流程见 [PUBLISHING.md](./PUBLISHING.md)。本分支通过 JitPack 发布，
-发布新版本时需要在 macOS 构建 Maven 产物并上传同版本的 `mmkv-maven.tar.gz` 到 GitHub Release。
+发布新版本时需要在 macOS 构建到空的 Maven 目录，用
+`COPYFILE_DISABLE=1 tar --no-xattrs` 打包该目录下的 `com/github/gycrosskit/mmkv-ohos`，
+更新根目录的 `mmkv-maven.sha256`，并上传同版本的 `mmkv-maven.tar.gz` 到 GitHub Release。

@@ -15,6 +15,8 @@ from pathlib import Path
 # JitPack maps classified KMP source/metadata JAR URLs to missing plain JARs.
 for root in (Path.home() / '.m2/repository/com/github/gycrosskit/mmkv-ohos', Path('build/release-maven')):
     for file in root.rglob('*.module'):
+        if file.name.startswith('._'):
+            continue
         data = json.loads(file.read_text())
         data['variants'] = [
             variant for variant in data['variants']

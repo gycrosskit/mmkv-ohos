@@ -11,7 +11,7 @@ kotlin {
         binaries.executable()
     }
     sourceSets.commonMain.dependencies {
-        implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-1")
+        implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-2")
     }
 }
 
