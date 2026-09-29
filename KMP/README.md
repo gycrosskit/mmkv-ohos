@@ -3,7 +3,7 @@
 本分支基于 [Tencent/MMKV](https://github.com/Tencent/MMKV) 2.4.2，保留 `com.tencent.mmkv.kmp` API，
 增加 `ohosArm64`。源码及衍生代码继续遵循上游 BSD 3-Clause 许可证。
 
-## Gradle dependency
+## Gradle 依赖
 
 在 `dependencyResolutionManagement.repositories` 中加入 JitPack：
 
@@ -11,7 +11,7 @@
 maven { url = uri("https://jitpack.io") }
 ```
 
-Add the MMKV KMP package to your shared module:
+在共享模块中引入 MMKV KMP：
 
 ```kotlin
 kotlin {
@@ -23,7 +23,7 @@ kotlin {
 }
 ```
 
-Android consumers should have AndroidX enabled in `gradle.properties`:
+Android 接入方应在 `gradle.properties` 中启用 AndroidX：
 
 ```properties
 android.useAndroidX=true
@@ -37,10 +37,9 @@ android.useAndroidX=true
 * `iosX64`
 * `ohosArm64`
 
-The iOS deployment target is 13.0. Apple Silicon simulator runtimes start at
-iOS 14.
+iOS 最低部署版本为 13.0；Apple Silicon 模拟器运行时从 iOS 14 开始。
 
-## Published artifacts
+## 发布产物
 
 消费者只依赖根坐标：
 
@@ -52,7 +51,7 @@ Gradle 根据 Kotlin Multiplatform 元数据选择 Android、iOS 或鸿蒙产物
 JitPack 从本仓库对应版本的 GitHub Release 下载在 macOS 上构建的 Maven 产物。
 本地验证时，可将消费者的仓库地址改为 `KMP/mmkv/build/local-maven`。
 
-## Initialize
+## 初始化
 
 Android:
 
@@ -87,7 +86,7 @@ import com.tencent.mmkv.kmp.initialize
 MMKV.initialize(rootDir)
 ```
 
-## Basic usage
+## 基本用法
 
 ```kotlin
 val kv = MMKV.defaultMMKV()
@@ -95,21 +94,16 @@ kv.encodeString("name", "MMKV")
 val name = kv.decodeString("name")
 ```
 
-`close()` permanently destroys the native MMKV instance. All references backed
-by the same native instance become invalid immediately. The caller must ensure
-that no operation is running and no reference is used afterward. Discard every
-reference before reopening the same ID.
+`close()` 会永久销毁对应的原生 MMKV 实例，引用同一实例的所有对象会立即失效。调用方需先确保没有正在执行的操作，之后不再使用旧引用；重新打开同一 ID 前应丢弃全部旧引用。
 
 Android 继续依赖官方 `com.tencent:mmkv:2.4.2` AAR。iOS 和 OpenHarmony 的 KLIB 通过
 C bridge 携带 MMKV Core 静态库，鸿蒙 KMP 消费者无需额外引入 `@tencent/mmkv` ohpm 包。
 鸿蒙最终 `.so` 仍需由宿主正常打包。原生 C bridge 已在鸿蒙模拟器完成读写验证；
 KMP 产物已完成链接，ArkTS 宿主调用、真机运行及与 ArkTS MMKV 共存尚未验证。
 
-Do not also link the native MMKV CocoaPod or SwiftPM product into the same iOS
-binary that consumes `mmkv-kmp`; both contain MMKV Core and can produce
-duplicate native symbols.
+使用 `mmkv-kmp` 的同一个 iOS 二进制文件中，不要再链接原生 MMKV CocoaPod 或 SwiftPM 产品；两者都包含 MMKV Core，可能产生重复的原生符号。
 
-## Build from source
+## 从源码构建
 
 构建三端产物需要 macOS、Xcode、Android SDK、OpenHarmony Native SDK、CMake 和 JDK：
 
