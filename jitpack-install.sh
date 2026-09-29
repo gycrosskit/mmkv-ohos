@@ -7,20 +7,3 @@ sha256sum -c mmkv-maven.sha256
 mkdir -p "$HOME/.m2/repository" build/release-maven
 tar -xzf "$archive" -C "$HOME/.m2/repository"
 tar -xzf "$archive" -C build/release-maven
-
-python3 - <<'PY'
-import json
-from pathlib import Path
-
-# JitPack maps classified KMP source/metadata JAR URLs to missing plain JARs.
-for root in (Path.home() / '.m2/repository/com/github/gycrosskit/mmkv-ohos', Path('build/release-maven')):
-    for file in root.rglob('*.module'):
-        if file.name.startswith('._'):
-            continue
-        data = json.loads(file.read_text())
-        data['variants'] = [
-            variant for variant in data['variants']
-            if not variant['name'].endswith(('SourcesElements-published', 'MetadataElements-published'))
-        ]
-        file.write_text(json.dumps(data, indent=2))
-PY

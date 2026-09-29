@@ -5,13 +5,17 @@ plugins {
 
 kotlin {
     androidTarget()
-    iosArm64 { binaries.framework() }
+    iosArm64 {
+        binaries.framework()
+        compilerOptions.freeCompilerArgs.add("-Xpartial-linkage=disable")
+    }
     ohosArm64 {
         binaries.sharedLib()
         binaries.executable()
+        compilerOptions.freeCompilerArgs.add("-Xpartial-linkage=disable")
     }
     sourceSets.commonMain.dependencies {
-        implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-2")
+        implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-3")
     }
 }
 
