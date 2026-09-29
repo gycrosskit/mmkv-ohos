@@ -1,3 +1,7 @@
+# gycrosskit MMKV OpenHarmony KMP fork
+
+This fork adds an `ohosArm64` target to the experimental MMKV KMP module. See the [KMP dependency and build guide](KMP/README.md) for the JitPack coordinates and platform support.
+
 [![license](https://img.shields.io/badge/license-BSD_3-brightgreen.svg?style=flat)](https://github.com/Tencent/MMKV/blob/master/LICENSE.TXT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/MMKV/pulls)
 [![Release Version](https://img.shields.io/badge/release-2.4.2-brightgreen.svg)](https://github.com/Tencent/MMKV/releases)

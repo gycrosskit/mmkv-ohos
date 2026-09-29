@@ -52,6 +52,12 @@ ENDIF()
 FetchContent_MakeAvailable(mmkv)
 FetchContent_GetProperties(mmkv SOURCE_DIR MMKV_SOURCE_DIR)
 
+# The OHOS toolchain defaults to emulated TLS, but Kotlin/Native's executable
+# linker does not supply __emutls_get_address. OHOS supports native TLS.
+if(OHOS)
+    target_compile_options(core PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fno-emulated-tls>)
+endif()
+
 # Copy the C bridge header into a stable, build-local include directory.
 # Gradle can configure cinterop with this path before FetchContent has resolved
 # the source checkout, which also makes standalone KMP source builds work.

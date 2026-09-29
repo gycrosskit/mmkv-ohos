@@ -24,9 +24,18 @@ import org.gradle.api.tasks.bundling.Jar
 
 plugins {
     kotlin("multiplatform")
-    id("com.android.kotlin.multiplatform.library")
+    id("com.android.library")
     id("maven-publish")
     id("signing")
+}
+
+android {
+    namespace = "com.tencent.mmkv.kmp"
+    compileSdk = 35
+    defaultConfig {
+        minSdk = 23
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
 }
 
 val mmkvVersion = (findProperty("MMKV_VERSION") as? String) ?: "2.4.2"
@@ -98,7 +107,7 @@ fun registerCMakeBuildTask(
         workingDir = nativeInteropDir
         commandLine(
             buildList {
-                add("cmake")
+                add((findProperty("MMKV_CMAKE") as? String) ?: "cmake")
                 add("-S")
                 add(".")
                 add("-B")
@@ -134,7 +143,7 @@ fun registerCMakeBuildTask(
         workingDir = nativeInteropDir
         commandLine(
             buildList {
-                add("cmake")
+                add((findProperty("MMKV_CMAKE") as? String) ?: "cmake")
                 add("--build")
                 add(buildDir.absolutePath)
                 add("--config")
@@ -216,21 +225,14 @@ val verifySonatypePublication = tasks.register("verifySonatypePublication") {
 kotlin {
     withSourcesJar()
 
-    android {
-        namespace = "com.tencent.mmkv.kmp"
-        compileSdk = 35
-        minSdk = 23
+    androidTarget {
+        publishLibraryVariants("release")
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
         }
-        withDeviceTestBuilder {
-            sourceSetTreeName = "test"
-        }.configure {
-            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        }
     }
 
-    // Experimental KMP support currently targets Android + iOS only.
+    // The OHOS target uses the same C bridge as Darwin, built with the OHOS NDK.
     val darwinTargets = listOf(
         iosArm64(),
         iosSimulatorArm64(),
@@ -286,7 +288,42 @@ kotlin {
         }
     }
 
+    val ohosTarget = ohosArm64()
+    val ohosNativeSdk = (findProperty("OHOS_NATIVE_SDK") as? String)
+        ?: System.getenv("OHOS_SDK_NATIVE")
+        ?: System.getenv("DEVECO_SDK_HOME")?.let { "$it/openharmony/native" }
+    val ohosBuildDir = cmakeBuildDirFor("ohosArm64")
+    val ohosBuild = registerCMakeBuildTask(
+        label = "ohosArm64",
+        extraConfigureArgs = listOfNotNull(
+            ohosNativeSdk?.let { "-DCMAKE_TOOLCHAIN_FILE=$it/build/cmake/ohos.toolchain.cmake" },
+            "-DOHOS_ARCH=arm64-v8a",
+            "-DOHOS_STL=c++_static",
+        ),
+    )
+    tasks.named("cmakeConfigureOhosArm64").configure {
+        doFirst {
+            check(ohosNativeSdk != null && file("$ohosNativeSdk/build/cmake/ohos.toolchain.cmake").isFile) {
+                "Set OHOS_NATIVE_SDK to the OpenHarmony native SDK directory"
+            }
+        }
+    }
+    ohosTarget.compilations.getByName("main") {
+        cinterops {
+            val mmkv by creating {
+                defFile("nativeInterop/cinterop/mmkv.def")
+                compilerOpts("-I${ohosBuildDir.resolve("include").absolutePath}")
+                includeDirs(ohosBuildDir.resolve("include"))
+                extraOpts("-libraryPath", ohosBuildDir.absolutePath)
+            }
+        }
+    }
+    tasks.matching { it.name.startsWith("cinterop") && it.name.contains("OhosArm64") }
+        .configureEach { dependsOn(ohosBuild) }
+
     sourceSets {
+        val nativeMain = maybeCreate("nativeMain")
+        getByName("darwinMain").dependsOn(nativeMain)
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
@@ -299,7 +336,7 @@ kotlin {
             }
         }
 
-        val androidDeviceTest by getting {
+        val androidInstrumentedTest by getting {
             dependencies {
                 implementation("androidx.test:runner:1.7.0")
             }
@@ -351,7 +388,9 @@ signing {
     if (!signingKey.isNullOrBlank()) {
         useInMemoryPgpKeys(signingKey, signingPassword)
     }
-    sign(publishing.publications)
+    if (!signingKey.isNullOrBlank() || hasFileBasedSigning) {
+        sign(publishing.publications)
+    }
 }
 
 apply(from = rootProject.file("gradle/central-portal.gradle.kts"))

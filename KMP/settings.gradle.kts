@@ -2,6 +2,8 @@ rootProject.name = "MMKV-KMP"
 
 pluginManagement {
     repositories {
+        maven("https://maven.eazytec-cloud.com/nexus/repository/maven-public/")
+        maven("https://mirrors.tencent.com/nexus/repository/maven-public/")
         google()
         mavenCentral()
         gradlePluginPortal()
@@ -14,6 +16,8 @@ val localRepository = providers.gradleProperty("MMKV_LOCAL_REPOSITORY").orNull
 
 dependencyResolutionManagement {
     repositories {
+        maven("https://maven.eazytec-cloud.com/nexus/repository/maven-public/")
+        maven("https://mirrors.tencent.com/nexus/repository/maven-public/")
         if (!localRepository.isNullOrBlank()) {
             maven(localRepository)
         }

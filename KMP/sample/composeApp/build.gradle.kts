@@ -1,7 +1,7 @@
 plugins {
     kotlin("multiplatform")
     kotlin("native.cocoapods")
-    kotlin("plugin.compose") version "2.2.20"
+    kotlin("plugin.compose") version "2.2.21-1.0.0"
     id("com.android.application")
     id("org.jetbrains.compose") version "1.8.1"
 }
@@ -46,7 +46,7 @@ kotlin {
         commonMain {
             dependencies {
                 if (usePublishedMMKV) {
-                    implementation("com.tencent:mmkv-kmp:$mmkvVersion")
+                    implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:$mmkvVersion")
                 } else {
                     implementation(project(":mmkv"))
                 }
