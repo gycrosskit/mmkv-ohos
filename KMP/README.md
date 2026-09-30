@@ -103,28 +103,8 @@ KMP 产物已完成链接，ArkTS 宿主调用、真机运行及与 ArkTS MMKV �
 
 使用 `mmkv-kmp` 的同一个 iOS 二进制文件中，不要再链接原生 MMKV CocoaPod 或 SwiftPM 产品；两者都包含 MMKV Core，可能产生重复的原生符号。
 
-## 从源码构建
+## 文档
 
-构建三端产物需要 macOS、Xcode、Android SDK、OpenHarmony Native SDK、CMake 和 JDK：
-
-```bash
-ANDROID_HOME=/path/to/android-sdk bash KMP/gradlew -p KMP \
-  :mmkv:publishAllPublicationsToLocalTestRepository \
-  -POHOS_NATIVE_SDK=/path/to/openharmony/native \
-  -PMMKV_CMAKE=/path/to/cmake
-
-ANDROID_HOME=/path/to/android-sdk bash KMP/gradlew -p verification-consumer \
-  compileDebugKotlinAndroid linkDebugFrameworkIosArm64 \
-  linkDebugSharedOhosArm64 linkDebugExecutableOhosArm64
-```
-
-`MMKV_CMAKE` 可省略，此时要求 `cmake` 已在 `PATH`。KMP 验证工程仅从本地 Maven 坐标解析依赖。
-需要自定义产物目录时使用 `-PMMKV_LOCAL_REPOSITORY=/path/to/maven`，并在验证工程传入
-`-PmmkvMavenRepo=/path/to/maven`。`verification-consumer/native` 使用本地编译的鸿蒙静态库
-验证 C bridge 读写，可在鸿蒙模拟器执行。
-
-上游 Maven Central 发布流程见 [PUBLISHING.md](./PUBLISHING.md)。本分支通过 JitPack 发布，
-发布新版本时需要在 macOS 构建到空的 Maven 目录，执行
-`python3 prepare-jitpack-maven.py /path/to/maven` 将 cinterop KLIB 拆成独立模块，再用
-`COPYFILE_DISABLE=1 tar --no-xattrs` 打包该目录下的 `com/github/gycrosskit/mmkv-ohos`，
-更新根目录的 `mmkv-maven.sha256`，并上传同版本的 `mmkv-maven.tar.gz` 到 GitHub Release。
+- [返回项目 README](../README.md)：版本、平台要求、发布与反馈入口。
+- [开发与验证](DEVELOPMENT.md)：源码构建、独立消费者和发布归档。
+- [上游发布流程](PUBLISHING.md)：Maven Central 流程；本 fork 当前使用 JitPack。
