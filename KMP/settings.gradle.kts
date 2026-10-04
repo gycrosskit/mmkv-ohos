@@ -16,14 +16,17 @@ val localRepository = providers.gradleProperty("MMKV_LOCAL_REPOSITORY").orNull
 
 dependencyResolutionManagement {
     repositories {
-        maven("https://maven.eazytec-cloud.com/nexus/repository/maven-public/")
-        maven("https://mirrors.tencent.com/nexus/repository/maven-public/")
         if (!localRepository.isNullOrBlank()) {
             maven(localRepository)
         }
         if (useMavenLocal) {
             mavenLocal()
         }
+        maven("https://jitpack.io") {
+            content { includeGroup("com.github.gycrosskit.mmkv-ohos") }
+        }
+        maven("https://maven.eazytec-cloud.com/nexus/repository/maven-public/")
+        maven("https://mirrors.tencent.com/nexus/repository/maven-public/")
         google()
         mavenCentral()
     }

@@ -124,10 +124,14 @@ ANDROID_HOME=/path/to/android-sdk bash KMP/gradlew -p verification-consumer \
   linkDebugSharedOhosArm64 linkDebugExecutableOhosArm64
 ```
 
-`MMKV_CMAKE` 可省略，此时要求 `cmake` 已在 `PATH`。KMP 验证工程仅从本地 Maven 坐标解析依赖。
+`MMKV_CMAKE` 可省略，此时要求 `cmake` 已在 `PATH`。`verification-consumer` 默认从 JitPack 解析已发布版本，
+传入 `-PmmkvMavenRepo` 时可验证本地待发布产物；两种方式均不引用本仓库源码。
 需要自定义产物目录时使用 `-PMMKV_LOCAL_REPOSITORY=/path/to/maven`，并在验证工程传入
 `-PmmkvMavenRepo=/path/to/maven`。`verification-consumer/native` 使用本地编译的鸿蒙静态库
 验证 C bridge 读写，可在鸿蒙模拟器执行。
+
+示例默认依赖本仓库源码；增加 `-PMMKV_INCLUDE_SAMPLE=true -PMMKV_USE_PUBLISHED=true`
+后改为消费 `VERSION_NAME` 指定的 JitPack 版本，仓库配置优先从 JitPack 解析本 fork 的坐标；显式指定的本地验证仓库仍优先。
 
 上游 Maven Central 发布流程见 [PUBLISHING.md](./PUBLISHING.md)。本分支通过 JitPack 发布，
 发布新版本时需要在 macOS 构建到空的 Maven 目录，执行

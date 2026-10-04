@@ -67,6 +67,7 @@ for module in root.rglob("*.module"):
     metadata = json.loads(module.read_text())
     metadata["variants"] = [
         variant for variant in metadata["variants"]
-        if not variant["name"].endswith(("SourcesElements-published", "MetadataElements-published"))
+        if variant["name"] != "metadataSourcesElements"
+        and not variant["name"].endswith(("SourcesElements-published", "MetadataElements-published"))
     ]
     write_module(module, metadata)
