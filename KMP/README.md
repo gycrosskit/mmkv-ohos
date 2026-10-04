@@ -17,7 +17,7 @@ maven { url = uri("https://jitpack.io") }
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-3")
+            implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-4")
         }
     }
 }
@@ -44,7 +44,7 @@ iOS 最低部署版本为 13.0；Apple Silicon 模拟器运行时从 iOS 14 开�
 消费者只依赖根坐标：
 
 ```text
-com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-3
+com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-4
 ```
 
 Gradle 根据 Kotlin Multiplatform 元数据选择 Android、iOS 或鸿蒙产物，无需直接声明平台产物。

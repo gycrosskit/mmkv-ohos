@@ -11,13 +11,17 @@ group = "com.github.gycrosskit.mmkv-ohos"
 platforms = ("iosarm64", "iossimulatorarm64", "iosx64", "ohosarm64")
 
 
-def write_module(path, data):
-    content = (json.dumps(data, indent=2) + "\n").encode()
-    path.write_bytes(content)
+def write_checksums(path):
+    content = path.read_bytes()
     for algorithm in ("md5", "sha1", "sha256", "sha512"):
         path.with_name(path.name + "." + algorithm).write_text(
             hashlib.new(algorithm, content).hexdigest()
         )
+
+
+def write_module(path, data):
+    path.write_text(json.dumps(data, indent=2) + "\n")
+    write_checksums(path)
 
 
 for platform in platforms:
@@ -37,6 +41,7 @@ for platform in platforms:
     target_dir.mkdir(parents=True, exist_ok=True)
     filename = artifact + "-" + version + ".klib"
     shutil.copyfile(module.parent / cinterop["url"], target_dir / filename)
+    write_checksums(target_dir / filename)
     cinterop["name"] = filename
     cinterop["url"] = filename
 
@@ -59,14 +64,17 @@ for platform in platforms:
         '  <artifactId>' + artifact + '</artifactId>\n'
         '  <version>' + version + '</version>\n'
         '  <packaging>klib</packaging>\n'
+        '  <licenses><license><name>BSD 3-Clause License</name><url>https://opensource.org/licenses/BSD-3-Clause</url><distribution>repo</distribution></license></licenses>\n'
         '</project>\n'
     )
+    write_checksums(target_dir / (artifact + "-" + version + ".pom"))
     write_module(module, metadata)
 
 for module in root.rglob("*.module"):
     metadata = json.loads(module.read_text())
     metadata["variants"] = [
         variant for variant in metadata["variants"]
-        if not variant["name"].endswith(("SourcesElements-published", "MetadataElements-published"))
+        if variant["name"] != "metadataSourcesElements"
+        and not variant["name"].endswith(("SourcesElements-published", "MetadataElements-published"))
     ]
     write_module(module, metadata)

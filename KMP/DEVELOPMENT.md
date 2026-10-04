@@ -22,8 +22,11 @@ ANDROID_HOME=/path/to/android-sdk bash KMP/gradlew -p verification-consumer \
 `-PmmkvMavenRepo=/path/to/maven`。`verification-consumer/native` 使用本地编译的鸿蒙静态库
 验证 C bridge 读写，可在鸿蒙模拟器执行。
 
+示例默认依赖本仓库源码；增加 `-PMMKV_INCLUDE_SAMPLE=true -PMMKV_USE_PUBLISHED=true` 后消费 `VERSION_NAME` 指定的 JitPack 版本。显式本地验证仓库仍优先，随后从 JitPack 解析本 fork 的坐标。
+
 上游 Maven Central 发布流程见 [PUBLISHING.md](./PUBLISHING.md)。本分支通过 JitPack 发布，
 发布新版本时需要在 macOS 构建到空的 Maven 目录，执行
 `python3 prepare-jitpack-maven.py /path/to/maven` 将 cinterop KLIB 拆成独立模块，再用
 `COPYFILE_DISABLE=1 tar --no-xattrs` 打包该目录下的 `com/github/gycrosskit/mmkv-ohos`，
-更新根目录的 `mmkv-maven.sha256`，并上传同版本的 `mmkv-maven.tar.gz` 到 GitHub Release。
+校验全部 10 个 publication 的产物、POM 与四种 sidecar 后，将实际归档 SHA-256 写入根目录的
+`release-checksums.txt`（`Tag SHA256`），并上传同版本的 `mmkv-ohos-maven.tar.gz` 到 GitHub Release。

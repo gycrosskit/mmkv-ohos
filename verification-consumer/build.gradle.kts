@@ -15,7 +15,7 @@ kotlin {
         compilerOptions.freeCompilerArgs.add("-Xpartial-linkage=disable")
     }
     sourceSets.commonMain.dependencies {
-        implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-3")
+        implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-4")
     }
 }
 
