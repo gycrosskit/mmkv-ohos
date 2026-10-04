@@ -175,6 +175,7 @@ fun MavenPublication.configurePom(publicationName: String) {
             license {
                 name.set((findProperty("POM_LICENCE_NAME") as? String) ?: "BSD 3-Clause License")
                 url.set((findProperty("POM_LICENCE_URL") as? String) ?: "https://opensource.org/licenses/BSD-3-Clause")
+                distribution.set("repo")
             }
         }
         developers {

@@ -28,4 +28,5 @@ ANDROID_HOME=/path/to/android-sdk bash KMP/gradlew -p verification-consumer \
 发布新版本时需要在 macOS 构建到空的 Maven 目录，执行
 `python3 prepare-jitpack-maven.py /path/to/maven` 将 cinterop KLIB 拆成独立模块，再用
 `COPYFILE_DISABLE=1 tar --no-xattrs` 打包该目录下的 `com/github/gycrosskit/mmkv-ohos`，
-更新根目录的 `mmkv-maven.sha256`，并上传同版本的 `mmkv-maven.tar.gz` 到 GitHub Release。
+校验全部 10 个 publication 的产物、POM 与四种 sidecar 后，将实际归档 SHA-256 写入根目录的
+`release-checksums.txt`（`Tag SHA256`），并上传同版本的 `mmkv-ohos-maven.tar.gz` 到 GitHub Release。
