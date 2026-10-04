@@ -2,6 +2,74 @@
 
 为 Android、iOS 和 OpenHarmony 的 Kotlin Multiplatform 共享代码提供 MMKV 键值存储。基于 [Tencent/MMKV 2.4.2](https://github.com/Tencent/MMKV)，在上游实验性 KMP 模块中增加 `ohosArm64`，保留 `com.tencent.mmkv.kmp` API。
 
+## 架构与调用流程
+
+本 fork 维护 KMP 与 OpenHarmony 适配，公共 API 沿用上游 `com.tencent.mmkv.kmp`。共享代码使用同一组读写接口，初始化仍由各平台宿主完成。
+
+```mermaid
+flowchart TB
+    Host["宿主：平台初始化与私有目录"] --> API["commonMain：MMKV / MMKVNameSpace"]
+    API --> Android["androidMain：官方 Android MMKV"]
+    API --> Native["nativeMain：Kotlin/Native 实现"]
+    Native --> Bridge["cinterop：MMKVBridge.h / C bridge"]
+    Bridge --> Core["MMKV Core 静态库"]
+    Android --> Files["应用存储目录：数据与 CRC 文件"]
+    Core --> Files
+    IOS["iOS 初始化：应用 Documents"] --> Native
+    OHOS["OHOS 初始化：宿主传入 rootDir"] --> Native
+```
+
+Android AAR 传递依赖官方 Android 库；iOS/OHOS KLIB 经 C bridge 链接 Core，无需为此另装 ArkTS MMKV 包。上图描述 KMP 接入路径，不覆盖上游 Flutter、Python 等产品。
+
+```mermaid
+sequenceDiagram
+    participant Host as 平台宿主
+    participant API as KMP MMKV
+    participant Native as 平台实现 / MMKV Core
+    Host->>API: initialize(context 或 rootDir)
+    API->>Native: 设置存储目录和日志配置
+    Host->>API: defaultMMKV 或 mmkvWithID(config)
+    API->>Native: 获取原生实例
+    Native-->>API: 实例句柄
+    API-->>Host: MMKV
+    Host->>API: encodeString / decodeString
+    API->>Native: 读写键值
+    Native-->>API: 成功状态或读取结果
+    API-->>Host: 返回读写结果
+    Host->>Host: 确认无进行中的操作
+    Host->>API: close()
+    API->>Native: 关闭原生实例
+    Note over Host,API: 丢弃共享该实例的旧引用，后续使用重新获取实例
+```
+
+`initialize` 是各平台定义的 `MMKV.Companion` 扩展函数，不是三端通用的单一签名。类图中的虚线为创建/使用关系，`MMKVConfig` 是参数，不表示实例永久持有它。
+
+```mermaid
+classDiagram
+    class MMKV {
+        +defaultMMKV() MMKV
+        +mmkvWithID(mmapID, config) MMKV
+        +encodeString(key, value) Boolean
+        +decodeString(key)
+        +close()
+    }
+    class MMKVNameSpace {
+        +of(rootDir) MMKVNameSpace
+        +mmkvWithID(mmapID, config) MMKV
+        +close()
+    }
+    class MMKVConfig {
+        +mode
+        +cryptKey
+        +rootPath
+    }
+    MMKVNameSpace ..> MMKV : 获取实例
+    MMKVNameSpace ..> MMKVConfig : 创建参数
+    MMKV ..> MMKVConfig : 创建参数
+```
+
+源码入口：[MMKV API](KMP/mmkv/src/commonMain/kotlin/com/tencent/mmkv/kmp/MMKV.kt)、[命名空间](KMP/mmkv/src/commonMain/kotlin/com/tencent/mmkv/kmp/MMKVNameSpace.kt)、[创建配置](KMP/mmkv/src/commonMain/kotlin/com/tencent/mmkv/kmp/MMKVConfig.kt)、[Native 实现](KMP/mmkv/src/nativeMain/kotlin/com/tencent/mmkv/kmp/MMKV.native.kt)、[OHOS 初始化](KMP/mmkv/src/ohosArm64Main/kotlin/com/tencent/mmkv/kmp/MMKV.ohos.kt)、[C bridge 链接定义](KMP/mmkv/nativeInterop/cinterop/mmkv.def)。
+
 ## 平台与要求
 
 | 平台 | 发布变体 | 系统 / 工具链要求 |
