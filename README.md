@@ -1,379 +1,83 @@
-# gycrosskit MMKV OpenHarmony KMP fork
+# GY CrossKit MMKV OpenHarmony
 
-This fork adds an `ohosArm64` target to the experimental MMKV KMP module. See the [KMP dependency and build guide](KMP/README.md) for the JitPack coordinates and platform support.
+为 Android、iOS 和 OpenHarmony 的 Kotlin Multiplatform 共享代码提供 MMKV 键值存储。基于 [Tencent/MMKV 2.4.2](https://github.com/Tencent/MMKV)，在上游实验性 KMP 模块中增加 `ohosArm64`，保留 `com.tencent.mmkv.kmp` API。
 
-[![license](https://img.shields.io/badge/license-BSD_3-brightgreen.svg?style=flat)](https://github.com/Tencent/MMKV/blob/master/LICENSE.TXT)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/MMKV/pulls)
-[![Release Version](https://img.shields.io/badge/release-2.4.2-brightgreen.svg)](https://github.com/Tencent/MMKV/releases)
-[![Platform](https://img.shields.io/badge/Platform-%20Android%20%7C%20iOS%2FmacOS%20%7C%20Kotlin%20Multiplatform%20%7C%20Windows%20%7C%20POSIX%20%7C%20HarmonyOS%20NEXT-brightgreen.svg)](https://github.com/Tencent/MMKV/wiki/home)
+## 平台与要求
 
-中文版本请参看[这里](./README_CN.md)
+| 平台 | 发布变体 | 系统 / 工具链要求 |
+| --- | --- | --- |
+| Android | Android AAR | minSdk 23；启用 AndroidX，传递依赖官方 `com.tencent:mmkv:2.4.2` |
+| iOS | `iosArm64`、`iosSimulatorArm64`、`iosX64` | 最低部署 iOS 13.0；编译/链接需要 macOS / Xcode |
+| OpenHarmony | `ohosArm64` | OHOS Native SDK；宿主提供应用私有可写目录并打包最终 `.so` |
 
-MMKV is an **efficient**, **small**, **easy-to-use** mobile key-value storage framework used in the WeChat application. It's currently available on **Android**, **iOS/macOS**, **Windows**, **POSIX** and **HarmonyOS NEXT**, with experimental **Kotlin Multiplatform** support.
+当前发布使用 Kotlin `2.2.21-1.0.0` 的 OpenHarmony 工具链。普通 Kotlin `2.2.21` 不提供 `ohosArm64()`；建议消费者使用同一工具链。仓库构建基线为 JDK 17 / Gradle 8.14.3 / AGP 8.10.1。OHOS 最低系统版本尚未由设备验收确定。
 
-# MMKV for Kotlin Multiplatform
+## 安装
 
-The v2.4.2 Kotlin Multiplatform package is experimental and currently targets
-Android and iOS. Its API and artifact layout may change in a future release.
-Add it to the shared module:
+在项目的 `settings.gradle.kts` 中加入：
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+```
+
+在共享模块的 `build.gradle.kts` 中添加：
 
 ```kotlin
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("com.tencent:mmkv-kmp:2.4.2")
+            implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-3")
         }
     }
 }
 ```
 
-Supported targets are Android, `iosArm64`, `iosSimulatorArm64`, and `iosX64`. See the [Kotlin Multiplatform guide](./KMP/README.md) for initialization and packaging details.
+Gradle 根据 KMP 元数据选择平台产物。iOS/OHOS KLIB 通过 C bridge 携带 MMKV Core 静态库，鸿蒙 KMP 消费者无需另加 `@tencent/mmkv` ohpm 包。
 
-# MMKV for Android
+## 初始化与使用
 
-## Features
+首次读写前，在对应平台源码中初始化：
 
-* **Efficient**. MMKV uses mmap to keep memory synced with files, and protobuf to encode/decode values, making the most of Android to achieve the best performance.
-  * **Multi-Process concurrency**: MMKV supports concurrent read-read and read-write access between processes.
+```kotlin
+import com.tencent.mmkv.kmp.MMKV
+import com.tencent.mmkv.kmp.initialize
 
-* **Easy-to-use**. You can use MMKV as you go. All changes are saved immediately, no `sync`, no `apply` calls needed.
+// androidMain：Application.onCreate 中传入 Application Context
+MMKV.initialize(applicationContext)
 
-* **Small**.
-  * **A handful of files**: MMKV contains process locks, encode/decode helpers and mmap logics, and nothing more. It's really tidy.
-  * **About 50K in binary size**: MMKV adds about 50K per architecture on App size, and much less when zipped (APK).
+// iosMain：默认使用应用 Documents 下的 mmkv 目录
+MMKV.initialize()
 
-
-## Getting Started
-
-### Installation Via Maven
-Add the following lines to `build.gradle` on your app module:
-
-```gradle
-dependencies {
-    implementation 'com.tencent:mmkv:2.4.2'
-    // replace "2.4.2" with any available version
-}
+// ohosArm64Main：rootDir 由宿主提供，为应用私有、可写目录
+MMKV.initialize(rootDir)
 ```
 
-Starting from v2.0.0, MMKV **no longer supports 32-bit** arch and API level 22 or 21, if you want 32-bit or API level 21~22, use v1.3.x LTS series.  
+三种初始化方式分别用于对应平台；之后 `commonMain` 可以共享读写代码：
 
-For other installation options, see [Android Setup](https://github.com/Tencent/MMKV/wiki/android_setup).
+```kotlin
+import com.tencent.mmkv.kmp.MMKV
 
-### Quick Tutorial
-You can use MMKV as you go. All changes are saved immediately, no `sync`, no `apply` calls needed.  
-Setup MMKV on App startup, say your `Application` class, add these lines:
-
-```Java
-public void onCreate() {
-    super.onCreate();
-
-    String rootDir = MMKV.initialize(this);
-    System.out.println("mmkv root: " + rootDir);
-    //……
-}
+val store = MMKV.defaultMMKV()
+val saved = store.encodeString("name", "MMKV")
+val name = store.decodeString("name")
 ```
 
-MMKV has a global instance, that can be used directly:
+`close()` 会销毁对应的原生实例，使共享该实例的所有旧引用失效。调用前须确保没有进行中的操作，之后丢弃旧引用。一个 iOS 二进制中同时链接本 KMP 库和原生 MMKV CocoaPod / SwiftPM 产品可能产生重复 MMKV Core 符号。
 
-```Java
-import com.tencent.mmkv.MMKV;
-    
-MMKV kv = MMKV.defaultMMKV();
+## 文档与支持
 
-kv.encode("bool", true);
-boolean bValue = kv.decodeBool("bool");
+- [KMP 接入指南](KMP/README.md)：各平台初始化、生命周期与打包限制。
+- [开发与验证](KMP/DEVELOPMENT.md)：源码构建、独立消费验证和发布归档。
+- [上游中文说明](README_CN.md)、[上游英文说明](https://github.com/Tencent/MMKV/blob/master/README.md)：MMKV 通用用法；上游 `com.tencent:mmkv-kmp` 坐标不代表本 fork 的鸿蒙版本。
+- [GitHub Releases](https://github.com/gycrosskit/mmkv-ohos/releases)：版本与 Maven 归档；JitPack 从相同版本 Release 提供远程依赖。
+- [GitHub Issues](https://github.com/gycrosskit/mmkv-ohos/issues)：提供版本、平台、初始化方式及最小复现。
 
-kv.encode("int", Integer.MIN_VALUE);
-int iValue = kv.decodeInt("int");
+已有验证覆盖 Android 消费编译、iOS Framework 链接、OHOS 动态库/可执行文件链接，以及鸿蒙模拟器上的原生 C bridge 读写。ArkTS 宿主调用、真机运行及与 ArkTS MMKV 共存尚未验证；KMP 链接结果不等于完整宿主验收。
 
-kv.encode("string", "Hello from mmkv");
-String str = kv.decodeString("string");
-```
-
-MMKV also supports **Multi-Process Access**. Full tutorials can be found here [Android Tutorial](https://github.com/Tencent/MMKV/wiki/android_tutorial).
-
-## Performance
-Writing random `int` for 1000 times, we get this chart:  
-![](https://github.com/Tencent/MMKV/wiki/assets/profile_android_mini.png)  
-For more benchmark data, please refer to [our benchmark](https://github.com/Tencent/MMKV/wiki/android_benchmark).
-
-# MMKV for iOS/macOS
-
-## Features
-
-* **Efficient**. MMKV uses mmap to keep memory synced with files, and protobuf to encode/decode values, making the most of iOS/macOS to achieve the best performance.
- 
-* **Easy-to-use**. You can use MMKV as you go, no configurations are needed. All changes are saved immediately, no `synchronize` calls are needed.
-
-* **Small**.
-  * **A handful of files**: MMKV contains encode/decode helpers and mmap logics and nothing more. It's really tidy.
-  * **Less than 30K in binary size**: MMKV adds less than 30K per architecture on App size, and much less when zipped (IPA).
-
-## Getting Started
-
-### Installation Via CocoaPods:
-  1. Install [CocoaPods](https://guides.CocoaPods.org/using/getting-started.html);
-  2. Open the terminal, `cd` to your project directory, run `pod repo update` to make CocoaPods aware of the latest available MMKV versions;
-  3. Edit your Podfile, add `pod 'MMKV'` to your app target;
-  4. Run `pod install`;
-  5. Open the `.xcworkspace` file generated by CocoaPods;
-  6. Add `#import <MMKV/MMKV.h>` to your source file and we are done.
-
-For other installation options, see [iOS/macOS Setup](https://github.com/Tencent/MMKV/wiki/iOS_setup).
-
-### Quick Tutorial
-You can use MMKV as you go, no configurations are needed. All changes are saved immediately, no `synchronize` calls are needed.
-Setup MMKV on App startup, in your `-[MyApp application: didFinishLaunchingWithOptions:]`, add these lines:
-
-```objective-c
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    // init MMKV in the main thread
-    [MMKV initializeMMKV:nil];
-
-    //...
-    return YES;
-}
-```
-
-MMKV has a global instance, that can be used directly:
-
-```objective-c
-MMKV *mmkv = [MMKV defaultMMKV];
-    
-[mmkv setBool:YES forKey:@"bool"];
-BOOL bValue = [mmkv getBoolForKey:@"bool"];
-    
-[mmkv setInt32:-1024 forKey:@"int32"];
-int32_t iValue = [mmkv getInt32ForKey:@"int32"];
-    
-[mmkv setString:@"hello, mmkv" forKey:@"string"];
-NSString *str = [mmkv getStringForKey:@"string"];
-```
-
-MMKV also supports **Multi-Process Access**. Full tutorials can be found [here](https://github.com/Tencent/MMKV/wiki/iOS_tutorial).
-
-## Performance
-Writing random `int` for 10000 times, we get this chart:  
-![](https://github.com/Tencent/MMKV/wiki/assets/profile_mini.png)  
-For more benchmark data, please refer to [our benchmark](https://github.com/Tencent/MMKV/wiki/iOS_benchmark).
-
-
-# MMKV for Windows
-
-## Features
-
-* **Efficient**. MMKV uses mmap to keep memory synced with files, and protobuf to encode/decode values, making the most of Windows to achieve the best performance.
-  * **Multi-Process concurrency**: MMKV supports concurrent read-read and read-write access between processes.
-
-* **Easy-to-use**. You can use MMKV as you go. All changes are saved immediately, no `save`, no `sync` calls are needed.
-
-* **Small**.
-  * **A handful of files**: MMKV contains process locks, encode/decode helpers and mmap logics, and nothing more. It's really tidy.
-  * **About 10K in binary size**: MMKV adds about 10K on application size, and much less when zipped.
-
-
-## Getting Started
-
-### Installation Via Source
-1. Getting source code from git repository:
-  
-   ```
-   git clone https://github.com/Tencent/MMKV.git
-   ```
-  
-2. Add `Core/core.vcxproj` to your solution;
-3. Add `MMKV` project to your project's dependencies;
-4. Add `$(OutDir)include` to your project's `C/C++` -> `General` -> `Additional Include Directories`;
-5. Add `$(OutDir)` to your project's `Linker` -> `General` -> `Additional Library Directories`;
-6. Add `mmkv.lib` to your project's `Linker` -> `Input` -> `Additional Dependencies`;
-7. Add `#include <MMKV/MMKV.h>` to your source file and we are done.
-
-
-note:  
-
-1. MMKV is compiled with `MT/MTd` runtime by default. If your project uses `MD/MDd`, you should change MMKV's setting to match your project's (`C/C++` -> `Code Generation` -> `Runtime Library`), or vice versa.
-2. MMKV is developed with Visual Studio 2017, change the `Platform Toolset` if you use a different version of Visual Studio.
-
-For other installation options, see [Windows Setup](https://github.com/Tencent/MMKV/wiki/windows_setup).
-
-### Quick Tutorial
-You can use MMKV as you go. All changes are saved immediately, no `sync`, no `save` calls needed.  
-Setup MMKV on App startup, say in your `main()`, add these lines:
-
-```C++
-#include <MMKV/MMKV.h>
-
-int main() {
-    std::wstring rootDir = getYourAppDocumentDir();
-    MMKV::initializeMMKV(rootDir);
-    //...
-}
-```
-
-MMKV has a global instance, that can be used directly:
-
-```C++
-auto mmkv = MMKV::defaultMMKV();
-
-mmkv->set(true, "bool");
-std::cout << "bool = " << mmkv->getBool("bool") << std::endl;
-
-mmkv->set(1024, "int32");
-std::cout << "int32 = " << mmkv->getInt32("int32") << std::endl;
-
-mmkv->set("Hello, MMKV for Windows", "string");
-std::string result;
-mmkv->getString("string", result);
-std::cout << "string = " << result << std::endl;
-```
-
-MMKV also supports **Multi-Process Access**. Full tutorials can be found here [Windows Tutorial](https://github.com/Tencent/MMKV/wiki/windows_tutorial).
-
-# MMKV for POSIX
-
-## Features
-
-* **Efficient**. MMKV uses mmap to keep memory synced with files, and protobuf to encode/decode values, making the most of POSIX to achieve the best performance.
-  * **Multi-Process concurrency**: MMKV supports concurrent read-read and read-write access between processes.
-
-* **Easy-to-use**. You can use MMKV as you go. All changes are saved immediately, no `save`, no `sync` calls are needed.
-
-* **Small**.
-  * **A handful of files**: MMKV contains process locks, encode/decode helpers and mmap logics, and nothing more. It's really tidy.
-  * **About 7K in binary size**: MMKV adds about 7K on application size, and much less when zipped.
-
-
-## Getting Started
-
-### Installation Via CMake
-1. Getting source code from the git repository:
-  
-   ```
-   git clone https://github.com/Tencent/MMKV.git
-   ```
-2. Edit your `CMakeLists.txt`, add those lines:
-
-    ```cmake
-    add_subdirectory(mmkv/POSIX/src mmkv)
-    target_link_libraries(MyApp
-        mmkv)
-    ```
-3. Add `#include "MMKV.h"` to your source file and we are done.
-
-For other installation options, see [POSIX Setup](https://github.com/Tencent/MMKV/wiki/posix_setup).
-
-### Quick Tutorial
-You can use MMKV as you go. All changes are saved immediately, no `sync`, no `save` calls needed.  
-Setup MMKV on App startup, say in your `main()`, add these lines:
-
-```C++
-#include "MMKV.h"
-
-int main() {
-    std::string rootDir = getYourAppDocumentDir();
-    MMKV::initializeMMKV(rootDir);
-    //...
-}
-```
-
-MMKV has a global instance, that can be used directly:
-
-```C++
-auto mmkv = MMKV::defaultMMKV();
-
-mmkv->set(true, "bool");
-std::cout << "bool = " << mmkv->getBool("bool") << std::endl;
-
-mmkv->set(1024, "int32");
-std::cout << "int32 = " << mmkv->getInt32("int32") << std::endl;
-
-mmkv->set("Hello, MMKV for Windows", "string");
-std::string result;
-mmkv->getString("string", result);
-std::cout << "string = " << result << std::endl;
-```
-
-MMKV also supports **Multi-Process Access**. Full tutorials can be found here [POSIX Tutorial](https://github.com/Tencent/MMKV/wiki/posix_tutorial).
-
-# MMKV for HarmonyOS NEXT
-
-## Features
-
-* **Efficient**. MMKV uses mmap to keep memory synced with file, and protobuf to encode/decode values, making the most of native platform to achieve best performance.
-  * **Multi-Process concurrency**: MMKV supports concurrent read-read and read-write access between processes.
-
-* **Easy-to-use**. You can use MMKV as you go. All changes are saved immediately, no `sync`, no `flush` calls needed.
-
-* **Small**.
-  * **A handful of files**: MMKV contains process locks, encode/decode helpers and mmap logics and nothing more. It's really tidy.
-  * **About 600K in binary size**: MMKV adds about 600K per architecture on App size, and much less when zipped (HAR/HAP).
-
-
-## Getting Started
-### Installation via OHPM:
-
-```bash
-ohpm install @tencent/mmkv
-```
-### Quick Tutorial
-You can use MMKV as you go. All changes are saved immediately, no `sync`, no `apply` calls needed.  
-Setup MMKV on App startup, say your `EntryAbility.onCreate()` function, add these lines:
-
-```js
-import { MMKV } from '@tencent/mmkv';
-
-export default class EntryAbility extends UIAbility {
-  onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
-    let appCtx = this.context.getApplicationContext();
-    let mmkvRootDir = MMKV.initialize(appCtx);
-    console.info('mmkv rootDir: ', mmkvRootDir);
-    ……
-  }
-```
-
-MMKV has a global instance, that can be used directly:
-
-```js
-import { MMKV } from '@tencent/mmkv';
-    
-let mmkv = MMKV.defaultMMKV();
-mmkv.encodeBool('bool', true);
-console.info('bool = ', mmkv.decodeBool('bool'));
-    
-mmkv.encodeInt32('int32', Math.pow(2, 31) - 1);
-console.info('max int32 = ', mmkv.decodeInt32('int32'));
-    
-mmkv.encodeInt64('int', BigInt(2**63) - BigInt(1));
-console.info('max int64 = ', mmkv.decodeInt64('int'));
-    
-let str: string = 'Hello OpenHarmony from MMKV';
-mmkv.encodeString('string', str);
-console.info('string = ', mmkv.decodeString('string'));
-
-let arrayBuffer: ArrayBuffer = StringToArrayBuffer('Hello OpenHarmony from MMKV with bytes');
-mmkv.encodeBytes('bytes', arrayBuffer);
-let bytes = mmkv.decodeBytes('bytes');
-console.info('bytes = ', ArrayBufferToString(bytes));
-```
-
-As you can see, MMKV is quite easy to use.
-For the full documentation, see [HarmonyOS NEXT Tutorial](https://github.com/Tencent/MMKV/wiki/ohos_setup).
-
-## License
-MMKV is published under the BSD 3-Clause license. For details check out the [LICENSE.TXT](./LICENSE.TXT).
-
-## Change Log
-Check out the [CHANGELOG.md](./CHANGELOG.md) for details of change history.
-
-## Contributing
-
-If you are interested in contributing, check out the [CONTRIBUTING.md](./CONTRIBUTING.md), also join our [Tencent OpenSource Plan](https://opensource.tencent.com/contribution). MMKV has officially joined the [Tencent Device-oriented Service Product Alliance](https://tds-union.qq.com/), working together with other alliance members to build an open and mutually beneficial frontend technology product ecosystem.
-
-
-To give clarity of what is expected of our members, MMKV has adopted the code of conduct defined by the Contributor Covenant, which is widely used. And we think it articulates our values well. For more, check out the [Code of Conduct](./CODE_OF_CONDUCT.md).
-
-## FAQ & Feedback
-Check out the [FAQ](https://github.com/Tencent/MMKV/wiki/FAQ) first. Should there be any questions, don't hesitate to create [issues](https://github.com/Tencent/MMKV/issues).
-
-## Personal Information Protection Rules
-User privacy is taken very seriously: MMKV does not obtain, collect or upload any personal information. Please refer to the [MMKV SDK Personal Information Protection Rules](https://support.weixin.qq.com/cgi-bin/mmsupportacctnodeweb-bin/pages/aY5BAtRiO1BpoHxo) for details.
+源码和衍生代码沿用上游 BSD 3-Clause 许可；第三方依赖的许可与声明一并见 [LICENSE.TXT](LICENSE.TXT)。
