@@ -30,3 +30,9 @@ ANDROID_HOME=/path/to/android-sdk bash KMP/gradlew -p verification-consumer \
 `COPYFILE_DISABLE=1 tar --no-xattrs` 打包该目录下的 `com/github/gycrosskit/mmkv-ohos`，
 校验全部 10 个 publication 的产物、POM 与四种 sidecar 后，将实际归档 SHA-256 写入根目录的
 `release-checksums.txt`（`Tag SHA256`），并上传同版本的 `mmkv-ohos-maven.tar.gz` 到 GitHub Release。
+
+`2.4.2-ohos-2.2.21-4` 已通过真实 JitPack 消费者的 Android 编译、iOS arm64 Framework 链接、
+OHOS 动态库与可执行文件链接，iOS/OHOS 禁用 partial linkage。10 个真实远程 publication 的
+BSD-3-Clause POM、完整变体引用、文件大小、四种声明哈希、ZIP CRC 和内部依赖均通过，
+Release 重下载 SHA-256 一致。JitPack 额外生成的 root identity redirect 与高阶 sidecar 的
+404 单列为渠道边界，公开 MD5/SHA-1 和必要变体引用正常；设备运行仍由宿主验收。
