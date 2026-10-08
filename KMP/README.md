@@ -1,5 +1,7 @@
 # MMKV Kotlin Multiplatform（OpenHarmony 适配）
 
+2026-10-08 的 Core/CMP/Kuikly 消费映射、候选修复和未验收范围见[功能与平台差异](../docs/功能与平台差异.md)；下文已有 tag 的验收保留为历史事实，修复交付版本为 `2.4.2-ohos-2.2.21-5`，发布状态以 Release 为准。
+
 本分支基于 [Tencent/MMKV](https://github.com/Tencent/MMKV) 2.4.2，保留 `com.tencent.mmkv.kmp` API，
 增加 `ohosArm64`。源码及衍生代码继续遵循上游 BSD 3-Clause 许可证。
 
@@ -17,7 +19,7 @@ maven { url = uri("https://jitpack.io") }
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-4")
+            implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-5")
         }
     }
 }

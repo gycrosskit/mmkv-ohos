@@ -43,10 +43,7 @@ actual class MMKV internal constructor(handle: COpaquePointer) {
             mmkv_set_log_level(level.toNativeLevel())
         }
 
-        actual fun defaultMMKV(): MMKV {
-            val config = buildDefaultNativeConfig()
-            return MMKV(mmkv_default(config)!!)
-        }
+        actual fun defaultMMKV(): MMKV = defaultMMKV(MMKVConfig())
 
         actual fun defaultMMKV(config: MMKVConfig): MMKV {
             return withNativeConfig(config.withNativeGroupRootIfNeeded()) { cfg ->
@@ -54,10 +51,7 @@ actual class MMKV internal constructor(handle: COpaquePointer) {
             }
         }
 
-        actual fun mmkvWithID(mmapID: String): MMKV {
-            val config = buildDefaultNativeConfig()
-            return MMKV(mmkv_with_id(mmapID, config)!!)
-        }
+        actual fun mmkvWithID(mmapID: String): MMKV = mmkvWithID(mmapID, MMKVConfig())
 
         actual fun mmkvWithID(mmapID: String, config: MMKVConfig): MMKV {
             return withNativeConfig(config.withNativeGroupRootIfNeeded()) { cfg ->
@@ -390,20 +384,6 @@ private fun MMKVConfig.withNativeGroupRootIfNeeded(): MMKVConfig {
 }
 
 @OptIn(ExperimentalForeignApi::class)
-private fun buildDefaultNativeConfig(): CValue<MMKVConfig_t> = cValue {
-    mode = MMKVMode.SINGLE_PROCESS
-    cryptKey = null
-    aes256 = false
-    rootPath = null
-    expectedCapacity = 0u
-    enableKeyExpire = -1
-    expiredInSeconds = 0u
-    enableCompareBeforeSet = false
-    recover = -1
-    itemSizeLimit = 0u
-}
-
-@OptIn(ExperimentalForeignApi::class)
 internal inline fun <R> withNativeConfig(config: MMKVConfig, block: (CValue<MMKVConfig_t>) -> R): R = memScoped {
     val cfg = alloc<MMKVConfig_t>()
     cfg.mode = config.mode
@@ -445,23 +425,26 @@ internal object NativeMMKVHandlerHolder {
     var handler: MMKVHandler? = null
 
     val logCallback: mmkv_log_callback_t = staticCFunction { level, file, line, function, message ->
-        val commonLevel = nativeLogLevelToCommon(level)
-        val fileName = file?.toKString() ?: ""
-        val functionName = function?.toKString() ?: ""
-        val text = message?.toKString() ?: ""
-        val handler = NativeMMKVHandlerHolder.handler
-        if (handler?.wantLogRedirect() == true) {
-            handler.mmkvLog(commonLevel, fileName, line, functionName, text)
-        } else {
-            println("[MMKV/${commonLevel.name}] <$fileName:$line::$functionName> $text")
+        // 宿主回调异常不能越过 C ABI；恢复回调失败沿用 MMKV 默认丢弃策略。
+        runCatching {
+            val commonLevel = nativeLogLevelToCommon(level)
+            val fileName = file?.toKString() ?: ""
+            val functionName = function?.toKString() ?: ""
+            val text = message?.toKString() ?: ""
+            val handler = NativeMMKVHandlerHolder.handler
+            if (handler?.wantLogRedirect() == true) {
+                handler.mmkvLog(commonLevel, fileName, line, functionName, text)
+            } else {
+                println("[MMKV/${commonLevel.name}] <$fileName:$line::$functionName> $text")
+            }
         }
+        Unit
     }
-
     val errorCallback: mmkv_error_callback_t = staticCFunction { mmapID, error ->
-        val result = when (error) {
+        val result = runCatching { when (error) {
             0 -> NativeMMKVHandlerHolder.handler?.onMMKVCRCCheckFail(mmapID?.toKString() ?: "")
             else -> NativeMMKVHandlerHolder.handler?.onMMKVFileLengthError(mmapID?.toKString() ?: "")
-        }
+        } }.getOrNull()
         when (result) {
             MMKVRecoverStrategic.OnErrorRecover -> 1
             else -> 0
@@ -469,14 +452,18 @@ internal object NativeMMKVHandlerHolder {
     }
 
     val contentChangeCallback: mmkv_content_change_callback_t = staticCFunction { mmapID ->
-        val handler = NativeMMKVHandlerHolder.handler
-        if (handler?.wantContentChangeNotification() == true) {
-            handler.onContentChangedByOuterProcess(mmapID?.toKString() ?: "")
+        runCatching {
+            val handler = NativeMMKVHandlerHolder.handler
+            if (handler?.wantContentChangeNotification() == true) {
+                handler.onContentChangedByOuterProcess(mmapID?.toKString() ?: "")
+            }
         }
+        Unit
     }
 
     val contentLoadCallback: mmkv_content_load_callback_t = staticCFunction { mmapID ->
-        NativeMMKVHandlerHolder.handler?.onMMKVContentLoadSuccessfully(mmapID?.toKString() ?: "")
+        runCatching { NativeMMKVHandlerHolder.handler?.onMMKVContentLoadSuccessfully(mmapID?.toKString() ?: "") }
+        Unit
     }
 }
 
