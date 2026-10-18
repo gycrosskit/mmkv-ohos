@@ -2,7 +2,7 @@
 
 **最终核对入口（2026-10-08）**：[测试源码、执行平台、前轮复用与本轮重跑](../docs/功能与平台差异.md#验证结果与测试入口)。下列构建/发布命令与已有版本记录保留原范围，不能套用为候选新执行结果。
 
-2026-10-08 的 Core/CMP/Kuikly 消费映射、候选修复和未验收范围见[功能与平台差异](../docs/功能与平台差异.md)；下文已有 tag 的验收保留为历史事实，候选修改尚未发布。
+2026-10-08 的 Core 三端消费映射、候选修复和未验收范围见[功能与平台差异](../docs/功能与平台差异.md)；下文已有 tag 的验收保留为历史事实，候选修改尚未发布。
 
 消费者接入见 [KMP 指南](README.md)。以下命令在仓库根目录执行；本地源码构建与远程坐标消费是不同的验证。
 
@@ -26,7 +26,7 @@ ANDROID_HOME=/path/to/android-sdk bash KMP/gradlew -p verification-consumer \
 `-PmmkvMavenRepo=/path/to/maven`。`verification-consumer/native` 使用本地编译的鸿蒙静态库
 验证 C bridge 读写，可在鸿蒙模拟器执行。
 
-示例默认依赖本仓库源码；增加 `-PMMKV_INCLUDE_SAMPLE=true -PMMKV_USE_PUBLISHED=true` 后消费 `VERSION_NAME` 指定的 JitPack 版本。显式本地验证仓库仍优先，随后从 JitPack 解析本 fork 的坐标。
+`KMP/sample/composeApp` 保留为源自上游的历史 Compose 示例快照（含旧 fork 接线），不再接入本 fork 的 settings 或当前验证流程；旧 `MMKV_INCLUDE_SAMPLE` 接线已移除。当前 KMP 消费验证使用上述 `verification-consumer`。历史示例接线见 [2.4.2-ohos-2.2.21-5 的 DEVELOPMENT](https://github.com/gycrosskit/mmkv-ohos/blob/2.4.2-ohos-2.2.21-5/KMP/DEVELOPMENT.md)，上游示例与许可继续保留。
 
 上游 Maven Central 发布流程见 [PUBLISHING.md](./PUBLISHING.md)。本分支通过 JitPack 发布，
 发布新版本时需要在 macOS 构建到空的 Maven 目录，执行

@@ -33,6 +33,4 @@ dependencyResolutionManagement {
 }
 
 include(":mmkv")
-if (providers.gradleProperty("MMKV_INCLUDE_SAMPLE").orNull == "true") {
-    include(":sample:composeApp")
-}
+// sample/composeApp is retained as a historical snapshot based on the upstream example, outside this fork's build and validation.

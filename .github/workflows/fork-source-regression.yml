@@ -1,0 +1,187 @@
+# Only the maintained fork source is checked; upstream publishing workflows stay separate.
+name: Fork source regression
+'on':
+  pull_request:
+    branches:
+    - main
+  workflow_dispatch: null
+permissions:
+  contents: read
+env:
+  SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  CI_FORK_HOST_FALLBACK_IP: ${{ vars.CI_FORK_HOST_FALLBACK_IP }}
+concurrency:
+  group: fork-source-${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+defaults:
+  run:
+    shell: bash
+jobs:
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+    - name: Checkout exact source candidate
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      with:
+        ref: ${{ env.SOURCE_SHA }}
+        persist-credentials: false
+    - name: Load pinned shared CI helpers
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      with:
+        repository: gycrosskit/.github
+        ref: 607ff44db144c68fc6523de38c04aac29e427b68
+        path: .ci-shared
+        persist-credentials: false
+    - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00
+      with:
+        distribution: temurin
+        java-version: '17'
+    - name: Record source identity and configure dependency resolution
+      run: |
+        mkdir -p ci-diagnostics
+        actual_sha="$(git rev-parse HEAD)"
+        printf 'source_sha=%s\nevent=%s\nevent_sha=%s\nrunner=%s\n' "$actual_sha" "$GITHUB_EVENT_NAME" "$GITHUB_SHA" "$(uname -m)" | tee ci-diagnostics/identity.txt
+        test "$actual_sha" = "$SOURCE_SHA"
+        printf 'networkaddress.cache.ttl=3600\nnetworkaddress.cache.negative.ttl=0\n' > "$RUNNER_TEMP/ci-java.security"
+        echo "JAVA_TOOL_OPTIONS=-Djava.security.properties=$RUNNER_TEMP/ci-java.security" >> "$GITHUB_ENV"
+        bash .ci-shared/templates/ci-pin-fork-host.sh
+        cat > "$RUNNER_TEMP/ci-repositories.gradle" <<'GRADLE'
+        gradle.settingsEvaluated { settings ->
+            [settings.pluginManagement.repositories, settings.dependencyResolutionManagement.repositories].each { repositories ->
+                repositories.withType(org.gradle.api.artifacts.repositories.MavenArtifactRepository).matching { it.url.host == 'maven.eazytec-cloud.com' }.all {
+                    content { includeVersionByRegex('.*', '.*', '.*-1\\.0\\.0') }
+                }
+            }
+        }
+        GRADLE
+    - name: Run Maven metadata contracts
+      run: |
+        python3 .ci-shared/templates/ci-run.py --log ci-diagnostics/metadata.log -- python3 Scripts/test-jitpack-metadata.py
+    - name: Require the Android SDK
+      run: |
+        test -f "$ANDROID_HOME/platforms/android-35/android.jar"
+    - name: Android source AAR
+      run: |
+        python3 .ci-shared/templates/ci-run.py --log ci-diagnostics/android-source-aar.log -- bash KMP/gradlew -p KMP --init-script "$RUNNER_TEMP/ci-repositories.gradle" :mmkv:compileDebugKotlinAndroid :mmkv:assembleRelease --no-daemon --max-workers=1 --no-parallel --no-build-cache --rerun-tasks --continue --stacktrace -Dorg.gradle.internal.http.connectionTimeout=15000 -Dorg.gradle.internal.http.socketTimeout=30000
+    - name: Save source CI logs and test XML
+      if: always()
+      uses: gycrosskit/.github/actions/ci-diagnostics@607ff44db144c68fc6523de38c04aac29e427b68
+      with:
+        status: ${{ job.status }}
+  native:
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+    - name: Checkout exact source candidate
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      with:
+        ref: ${{ env.SOURCE_SHA }}
+        persist-credentials: false
+    - name: Load pinned shared CI helpers
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      with:
+        repository: gycrosskit/.github
+        ref: 607ff44db144c68fc6523de38c04aac29e427b68
+        path: .ci-shared
+        persist-credentials: false
+    - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00
+      with:
+        distribution: temurin
+        java-version: '17'
+    - name: Record source identity and configure dependency resolution
+      run: |
+        mkdir -p ci-diagnostics
+        actual_sha="$(git rev-parse HEAD)"
+        printf 'source_sha=%s\nevent=%s\nevent_sha=%s\nrunner=%s\n' "$actual_sha" "$GITHUB_EVENT_NAME" "$GITHUB_SHA" "$(uname -m)" | tee ci-diagnostics/identity.txt
+        test "$actual_sha" = "$SOURCE_SHA"
+        printf 'networkaddress.cache.ttl=3600\nnetworkaddress.cache.negative.ttl=0\n' > "$RUNNER_TEMP/ci-java.security"
+        echo "JAVA_TOOL_OPTIONS=-Djava.security.properties=$RUNNER_TEMP/ci-java.security" >> "$GITHUB_ENV"
+        bash .ci-shared/templates/ci-pin-fork-host.sh
+        cat > "$RUNNER_TEMP/ci-repositories.gradle" <<'GRADLE'
+        gradle.settingsEvaluated { settings ->
+            [settings.pluginManagement.repositories, settings.dependencyResolutionManagement.repositories].each { repositories ->
+                repositories.withType(org.gradle.api.artifacts.repositories.MavenArtifactRepository).matching { it.url.host == 'maven.eazytec-cloud.com' }.all {
+                    content { includeVersionByRegex('.*', '.*', '.*-1\\.0\\.0') }
+                }
+            }
+        }
+        GRADLE
+    - name: Select the actual simulator architecture
+      run: |
+        case "$(uname -m)" in
+          arm64) echo 'NATIVE_TEST=iosSimulatorArm64Test' >> "$GITHUB_ENV"; echo 'NATIVE_TARGET=IosSimulatorArm64' >> "$GITHUB_ENV" ;;
+          x86_64) echo 'NATIVE_TEST=iosX64Test' >> "$GITHUB_ENV"; echo 'NATIVE_TARGET=IosX64' >> "$GITHUB_ENV" ;;
+          *) echo 'Unsupported macOS architecture' >&2; exit 1 ;;
+        esac
+        xcodebuild -version
+        xcrun --sdk iphonesimulator --show-sdk-path
+    - name: Native iOS tests
+      run: |
+        python3 .ci-shared/templates/ci-run.py --log ci-diagnostics/native-ios-tests.log -- bash KMP/gradlew -p KMP --init-script "$RUNNER_TEMP/ci-repositories.gradle" :mmkv:${NATIVE_TEST} :mmkv:compileKotlinIosArm64 :mmkv:compileKotlin${NATIVE_TARGET} --no-daemon --max-workers=1 --no-parallel --no-build-cache --rerun-tasks --continue --stacktrace -Dorg.gradle.internal.http.connectionTimeout=15000 -Dorg.gradle.internal.http.socketTimeout=30000
+    - name: Require real test execution
+      run: |
+        python3 - KMP/mmkv/build/test-results/${NATIVE_TEST} <<'TEST_RESULTS'
+        import sys, xml.etree.ElementTree as ET
+        from pathlib import Path
+        cases = []
+        for directory in sys.argv[1:]:
+            reports = list(Path(directory).glob('TEST-*.xml'))
+            assert reports, f'Missing test XML: {directory}'
+            current = [case for report in reports for case in ET.parse(report).getroot().iter('testcase')]
+            assert any(case.find('skipped') is None for case in current), f'No test executed: {directory}'
+            cases.extend(current)
+        assert all(case.find('failure') is None and case.find('error') is None for case in cases), 'Test failure/error'
+        executed = [case for case in cases if case.find('skipped') is None]
+        for required in ['MMKVSmokeTest', 'NativeStorageRecoveryTest', 'NativeHandlerBoundaryTest']:
+            assert any(case.get('classname', '').endswith(required) for case in executed), f'Required regression did not run: {required}'
+        print(f'Actual cases: {len(executed)} executed, {len(cases)-len(executed)} skipped')
+        TEST_RESULTS
+    - name: Install verified OpenHarmony API 15 Native SDK
+      id: ohos-sdk
+      run: |
+        # https://github.com/openharmony/docs/blob/master/en/release-notes/OpenHarmony-v5.0.3-release.md
+        # SDK version and SHA256 are fixed to that official release, including host architecture.
+        case "$(uname -m)" in
+          x86_64) sdk_archive=ohos-sdk-mac-public.tar.gz; sdk_sha=1fa1c67cc025994f7083d7e8bbe5ed7ad57959ceec56c91d609e30c30e2c00e8 ;;
+          arm64) sdk_archive=L2-SDK-MAC-M1-PUBLIC.tar.gz; sdk_sha=d43e8c69e079076b8b14e3d4dc368c83d47a0cb3187c47aa3d83fa98d9a7928d ;;
+          *) echo 'Unsupported SDK host architecture' >&2; exit 1 ;;
+        esac
+        sdk_file="$RUNNER_TEMP/$sdk_archive"
+        curl --fail --location --proto '=https' --proto-redir '=https' --retry 3 --connect-timeout 30 --max-time 900 --output "$sdk_file" "https://repo.huaweicloud.com/openharmony/os/5.0.3-Release/$sdk_archive"
+        printf '%s  %s\n' "$sdk_sha" "$sdk_file" | shasum -a 256 --check
+        python3 - "$sdk_file" "$RUNNER_TEMP/ohos-sdk" <<'SDK'
+        import json, os, shutil, subprocess, sys, tarfile
+        from pathlib import Path
+        archive, destination = Path(sys.argv[1]), Path(sys.argv[2])
+        destination.mkdir()
+        with tarfile.open(archive, 'r:gz') as source:
+            natives = [entry for entry in source if entry.isfile() and Path(entry.name).name.startswith('native-') and entry.name.endswith('.zip')]
+            assert len(natives) == 1, f'Expected one official Native SDK ZIP, found {len(natives)}'
+            native_zip = destination / 'native.zip'
+            with source.extractfile(natives[0]) as input_file, native_zip.open('wb') as output_file:
+                shutil.copyfileobj(input_file, output_file)
+        # Native clang/ld are symlinks; system unzip preserves links and executable modes.
+        subprocess.run(['unzip', '-q', str(native_zip), '-d', str(destination)], check=True)
+        toolchains = list(destination.rglob('build/cmake/ohos.toolchain.cmake'))
+        assert len(toolchains) == 1, f'Expected one OHOS toolchain, found {len(toolchains)}'
+        native = toolchains[0].parents[2]
+        package = json.loads((native / 'oh-uni-package.json').read_text())
+        assert str(package['apiVersion']) == '15' and package['version'] == '5.0.3.135', package
+        clang = native / 'llvm/bin/clang'
+        assert clang.is_file() and os.access(clang, os.X_OK), f'Missing executable Native clang: {clang}'
+        with open(os.environ['GITHUB_ENV'], 'a') as output:
+            output.write(f'OHOS_SDK_NATIVE={native}\n')
+        print(json.dumps({'native': str(native), 'package': package}, sort_keys=True))
+        SDK
+      timeout-minutes: 20
+      if: '!cancelled()'
+    - name: Native OHOS source
+      if: '!cancelled() && steps.ohos-sdk.outcome == ''success'''
+      run: |
+        python3 .ci-shared/templates/ci-run.py --log ci-diagnostics/native-ohos-source.log -- bash KMP/gradlew -p KMP --init-script "$RUNNER_TEMP/ci-repositories.gradle" :mmkv:compileKotlinOhosArm64 --no-daemon --max-workers=1 --no-parallel --no-build-cache --rerun-tasks --continue --stacktrace -Dorg.gradle.internal.http.connectionTimeout=15000 -Dorg.gradle.internal.http.socketTimeout=30000
+    - name: Save source CI logs and test XML
+      if: always()
+      uses: gycrosskit/.github/actions/ci-diagnostics@607ff44db144c68fc6523de38c04aac29e427b68
+      with:
+        status: ${{ job.status }}
