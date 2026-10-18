@@ -2,8 +2,8 @@
 
 This is the upstream Maven Central workflow; this fork publishes through
 JitPack/Release as described in [DEVELOPMENT.md](DEVELOPMENT.md).
-The maintained `2.4.2-ohos-2.2.21-6-rc.1` RC removes the CMP sample and
-its device-launch commands. Release status is recorded in the exact GitHub Release and release-validation workflow. The original instructions remain in the
+Source maintenance removes the CMP sample and its device-launch commands.
+Consumers continue using the verified `2.4.2-ohos-2.2.21-5` artifacts, which never included the sample; no new artifact release is needed. The original instructions remain in the
 [2.4.2-ohos-2.2.21-5 snapshot](https://github.com/gycrosskit/mmkv-ohos/blob/2.4.2-ohos-2.2.21-5/KMP/PUBLISHING.md).
 
 Publish from macOS so all Android and iOS target artifacts are produced by the

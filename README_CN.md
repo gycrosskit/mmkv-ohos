@@ -3,11 +3,11 @@ MMKV 是基于 mmap 内存映射的 key-value 组件，底层序列化/反序列
 
 ## Kotlin Multiplatform 指南
 
-本 fork 当前维护 RC 为 [`2.4.2-ohos-2.2.21-6-rc.1`](https://github.com/gycrosskit/mmkv-ohos/releases/tag/2.4.2-ohos-2.2.21-6-rc.1)，基于上游 2.4.2，支持 Android、`iosArm64`、`iosSimulatorArm64`、`iosX64` 和 `ohosArm64`。发布状态以该 Release 及[远程验收 workflow](https://github.com/gycrosskit/mmkv-ohos/actions/workflows/release-validation.yml)为准；版本号本身不表示已发布或验收通过。
+本 fork 当前可消费版本为 [`2.4.2-ohos-2.2.21-5`](https://github.com/gycrosskit/mmkv-ohos/releases/tag/2.4.2-ohos-2.2.21-5)，基于上游 2.4.2，支持 Android、`iosArm64`、`iosSimulatorArm64`、`iosX64` 和 `ohosArm64`。当前源码删除 CMP 示例及宿主，已验证 Maven 制品本来不包含示例，继续沿用该版本，不另发新制品。
 
 ```kotlin
 commonMain.dependencies {
-    implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-6-rc.1")
+    implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-5")
 }
 ```
 

@@ -1,6 +1,6 @@
 # MMKV Kotlin Multiplatform（OpenHarmony 适配）
 
-当前维护 RC：`2.4.2-ohos-2.2.21-6-rc.1`。本 RC 删除上游 CMP 示例和专用宿主接线，Core/KMP 公共能力保持不变；发布状态以 [Release](https://github.com/gycrosskit/mmkv-ohos/releases/tag/2.4.2-ohos-2.2.21-6-rc.1)、归档校验和及 [远程验收 workflow](https://github.com/gycrosskit/mmkv-ohos/actions/workflows/release-validation.yml) 为准。历史测试范围与当前流程见[功能与平台差异](../docs/功能与平台差异.md)。
+当前可消费版本为 `2.4.2-ohos-2.2.21-5`，发布状态以[对应 Release](https://github.com/gycrosskit/mmkv-ohos/releases/tag/2.4.2-ohos-2.2.21-5)为准。当前源码删除了上游 CMP 示例和专用宿主；该版本 Maven 制品本来不包含示例，Core/KMP 公共能力和消费版本保持不变，不另发新制品。功能与设备验收边界见[功能与平台差异](../docs/功能与平台差异.md)。
 
 本分支基于 [Tencent/MMKV](https://github.com/Tencent/MMKV) 2.4.2，保留 `com.tencent.mmkv.kmp` API，
 增加 `ohosArm64`。源码及衍生代码继续遵循上游 BSD 3-Clause 许可证。
@@ -19,7 +19,7 @@ maven { url = uri("https://jitpack.io") }
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-6-rc.1")
+            implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-5")
         }
     }
 }
@@ -46,7 +46,7 @@ iOS 最低部署版本为 13.0；Apple Silicon 模拟器运行时从 iOS 14 开�
 消费者只依赖根坐标：
 
 ```text
-com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-6-rc.1
+com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-5
 ```
 
 Gradle 根据 Kotlin Multiplatform 元数据选择 Android、iOS 或鸿蒙产物，无需直接声明平台产物。
@@ -101,7 +101,7 @@ val name = kv.decodeString("name")
 Android 继续依赖官方 `com.tencent:mmkv:2.4.2` AAR。iOS 和 OpenHarmony 的 KLIB 通过
 C bridge 携带 MMKV Core 静态库，鸿蒙 KMP 消费者无需额外引入 `@tencent/mmkv` ohpm 包。
 鸿蒙最终 `.so` 仍需由宿主正常打包。原生 C bridge 已在鸿蒙模拟器完成读写验证；
-历史 `2.4.2-ohos-2.2.21-5` KMP 产物已完成链接，ArkTS 宿主调用、真机运行及与 ArkTS MMKV 共存尚未验证。
+KMP 产物已完成链接，ArkTS 宿主调用、真机运行及与 ArkTS MMKV 共存尚未验证。
 
 使用 `mmkv-kmp` 的同一个 iOS 二进制文件中，不要再链接原生 MMKV CocoaPod 或 SwiftPM 产品；两者都包含 MMKV Core，可能产生重复的原生符号。
 
