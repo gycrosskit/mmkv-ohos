@@ -2,7 +2,7 @@
 set -euo pipefail
 : "${VERSION:?Provide an immutable Maven tag}"
 staging="${1:?Provide the extracted Maven directory}"
-publications=mmkv-kmp,mmkv-kmp-android,mmkv-kmp-iosarm64,mmkv-kmp-iossimulatorarm64,mmkv-kmp-iosx64,mmkv-kmp-ohosarm64,mmkv-cinterop-iosarm64,mmkv-cinterop-iossimulatorarm64,mmkv-cinterop-iosx64,mmkv-cinterop-ohosarm64
+publications=mmkv-kmp,mmkv-android,mmkv-kmp-iosarm64,mmkv-kmp-iossimulatorarm64,mmkv-kmp-iosx64,mmkv-kmp-ohosarm64,mmkv-cinterop-iosarm64,mmkv-cinterop-iossimulatorarm64,mmkv-cinterop-iosx64,mmkv-cinterop-ohosarm64
 python3 .ci-shared/templates/check-maven.py "$staging" com.github.gycrosskit.mmkv-ohos "$VERSION" mmkv-kmp ios_arm64,ios_x64,ios_simulator_arm64,ohos_arm64 "$publications" --license BSD-3-Clause --max-jvm-major 55
 python3 - "$staging" "$VERSION" <<'PYTHON'
 import json, sys, zipfile

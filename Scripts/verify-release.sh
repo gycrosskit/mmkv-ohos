@@ -9,7 +9,7 @@ commit="$(printf '%s\n' "$refs" | awk '$2 ~ /\^\{\}$/ {peeled=$1} $2 !~ /\^\{\}$
 test "$(git rev-parse HEAD)" = "$commit" || { echo 'Checkout does not match the exact remote tag commit' >&2; exit 1; }
 checksum="$(awk -v version="$VERSION" '$1 == version {print $2}' release-checksums.txt)"
 [[ "$checksum" =~ ^[a-f0-9]{64}$ ]] || { echo "Missing frozen checksum for $VERSION" >&2; exit 1; }
-publications=mmkv-kmp,mmkv-kmp-android,mmkv-kmp-iosarm64,mmkv-kmp-iossimulatorarm64,mmkv-kmp-iosx64,mmkv-kmp-ohosarm64,mmkv-cinterop-iosarm64,mmkv-cinterop-iossimulatorarm64,mmkv-cinterop-iosx64,mmkv-cinterop-ohosarm64
+publications=mmkv-kmp,mmkv-android,mmkv-kmp-iosarm64,mmkv-kmp-iossimulatorarm64,mmkv-kmp-iosx64,mmkv-kmp-ohosarm64,mmkv-cinterop-iosarm64,mmkv-cinterop-iossimulatorarm64,mmkv-cinterop-iosx64,mmkv-cinterop-ohosarm64
 output="$(mktemp -d)"
 trap 'rm -rf "$output"' EXIT
 archive="$output/mmkv-ohos-maven.tar.gz"

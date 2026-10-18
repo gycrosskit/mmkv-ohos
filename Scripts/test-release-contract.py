@@ -40,6 +40,11 @@ class ReleaseContractTest(unittest.TestCase):
         inventory = re.search(r'^publications=(.+)$', script, re.M).group(1).split(',')
         self.assertEqual(10, len(set(inventory)))
         self.assertEqual(4, sum(name.startswith('mmkv-cinterop-') for name in inventory))
+        self.assertIn('mmkv-android', inventory)
+        self.assertNotIn('mmkv-kmp-android', inventory)
+        public_script = (ROOT / 'Scripts/verify-release.sh').read_text()
+        public_inventory = re.search(r'^publications=(.+)$', public_script, re.M).group(1).split(',')
+        self.assertEqual(inventory, public_inventory)
         self.assertIn('--license BSD-3-Clause --max-jvm-major 55', script)
         for name in ['fork-source-regression.yml', 'package-release.yml']:
             workflow = (ROOT / '.github/workflows' / name).read_text()
