@@ -3,9 +3,19 @@ plugins {
     id("com.android.library") version "8.10.1"
 }
 
+val mmkvVersion = providers.gradleProperty("mmkvVersion").orElse("2.4.2-ohos-2.2.21-6-rc.1").get()
+
 kotlin {
     androidTarget()
     iosArm64 {
+        binaries.framework()
+        compilerOptions.freeCompilerArgs.add("-Xpartial-linkage=disable")
+    }
+    iosSimulatorArm64 {
+        binaries.framework()
+        compilerOptions.freeCompilerArgs.add("-Xpartial-linkage=disable")
+    }
+    iosX64 {
         binaries.framework()
         compilerOptions.freeCompilerArgs.add("-Xpartial-linkage=disable")
     }
@@ -15,7 +25,7 @@ kotlin {
         compilerOptions.freeCompilerArgs.add("-Xpartial-linkage=disable")
     }
     sourceSets.commonMain.dependencies {
-        implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-5")
+        implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:$mmkvVersion")
     }
 }
 

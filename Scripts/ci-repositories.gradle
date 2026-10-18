@@ -1,0 +1,7 @@
+gradle.settingsEvaluated { settings ->
+    [settings.pluginManagement.repositories, settings.dependencyResolutionManagement.repositories].each { repositories ->
+        repositories.withType(org.gradle.api.artifacts.repositories.MavenArtifactRepository).matching { it.url.host == 'maven.eazytec-cloud.com' }.all {
+            content { includeVersionByRegex('.*', '.*', '.*-1\\.0\\.0') }
+        }
+    }
+}

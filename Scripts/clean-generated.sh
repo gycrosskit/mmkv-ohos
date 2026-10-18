@@ -83,8 +83,6 @@ candidates=(
     'KMP/build'
     'KMP/mmkv/build'
     'KMP/mmkv/nativeInterop/build'
-    'KMP/sample/composeApp/build'
-    'KMP/sample/iosApp/Pods'
     'Android/MMKV/.gradle'
     'Android/MMKV/build'
     'Android/MMKV/mmkv/.cxx'

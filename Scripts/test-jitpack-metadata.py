@@ -1,11 +1,33 @@
-"""Exercise the actual staging script's cinterop split and metadata cleanup."""
+"""Check the Core-only fork boundary and real Maven staging metadata."""
 import hashlib
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
+
+
+class SourceBoundaryTest(unittest.TestCase):
+    def test_kmp_has_no_retired_cmp_sample_or_ui_dependencies(self):
+        root = Path(__file__).resolve().parents[1]
+        self.assertFalse((root / "KMP/sample").exists(), "Retired CMP sample returned")
+        # Kuikly may need Compose runtime/compiler; only the separate UI stack is forbidden.
+        ui = re.compile(
+            r"(?:androidx|org\.jetbrains)\.compose\.(?:ui|foundation|material)"
+            r"|org\.jetbrains\.compose[\"\':]"
+            r"|compose\.(?:ui|foundation|material|desktop|components|preview)"
+            r"|activity-compose|ComposeUIViewController"
+        )
+        for directory in (root / "KMP", root / "verification-consumer"):
+            for path in directory.rglob("*"):
+                if path.suffix not in (".kt", ".kts") or any(
+                    part in ("build", ".gradle", ".kotlin") for part in path.parts
+                ):
+                    continue
+                with self.subTest(path=str(path.relative_to(root))):
+                    self.assertIsNone(ui.search(path.read_text()), "Independent CMP UI stack returned")
 
 
 class MavenPreparationTest(unittest.TestCase):

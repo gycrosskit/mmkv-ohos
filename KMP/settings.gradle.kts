@@ -33,4 +33,3 @@ dependencyResolutionManagement {
 }
 
 include(":mmkv")
-// sample/composeApp is retained as a historical snapshot based on the upstream example, outside this fork's build and validation.

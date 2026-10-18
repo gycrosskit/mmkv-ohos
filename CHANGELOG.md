@@ -1,3 +1,9 @@
+## 2.4.2-ohos-2.2.21-6-rc.1
+
+- 维护范围聚焦 Core/KMP：删除上游 CMP 示例及 Android/desktop/iOS 宿主与专用构建接线；保留 Core/KMP 生产逻辑、公共 API、11 项有效库测试和 BSD-3-Clause 来源许可。
+- 新增远程 RC 归档与公开消费验收：固定官方 API15 SDK、精确 10 publication/4 cinterop、冻结 SHA-256、真实 producer 收据，以及 Android/iOS/Simulator/OHOS 最终链接。
+- 独立消费者支持精确版本参数及 `remoteOnly`，更新接入与开发文档。发布状态以 [Release](https://github.com/gycrosskit/mmkv-ohos/releases/tag/2.4.2-ohos-2.2.21-6-rc.1) 和对应版本的 [CI](https://github.com/gycrosskit/mmkv-ohos/actions/workflows/release-validation.yml) 为准；不预先声明发布或验收完成。
+
 # MMKV Change Log
 ## v2.4.2 / 2026-08-21
 

@@ -1,6 +1,8 @@
 # GY CrossKit MMKV OpenHarmony
 
-本库提供基础设施 Core，原生宿主与 Kuikly 使用相同平台实现；没有独立 UI 模块。三端消费入口、公开功能组、平台限制及 **2.4.2-ohos-2.2.21-5**的验证范围见 [功能与平台差异](docs/功能与平台差异.md)。发布状态以对应 [Release](https://github.com/gycrosskit/mmkv-ohos/releases/tag/2.4.2-ohos-2.2.21-5) 为准；设备验收边界见功能页。
+本库提供基础设施 Core，原生宿主与 Kuikly 使用相同平台实现；没有独立 UI 模块。三端消费入口、公开功能组、平台限制及 **2.4.2-ohos-2.2.21-6-rc.1**的验证范围见 [功能与平台差异](docs/功能与平台差异.md)。发布状态以对应 [Release](https://github.com/gycrosskit/mmkv-ohos/releases/tag/2.4.2-ohos-2.2.21-6-rc.1) 为准；设备验收边界见功能页。
+
+当前维护 RC 删除上游 CMP 示例及专用宿主/构建接线；Core、原生与 KMP 库保持不变。版本号不代表发布或 CI 验收完成；精确状态见上述 Release 与 [该版本远程验收](https://github.com/gycrosskit/mmkv-ohos/actions/workflows/release-validation.yml)，当前流程见 [开发与验证](KMP/DEVELOPMENT.md)。
 
 为 Android、iOS 和 OpenHarmony 的 Kotlin Multiplatform 共享代码提供 MMKV 键值存储。基于 [Tencent/MMKV 2.4.2](https://github.com/Tencent/MMKV)，在上游实验性 KMP 模块中增加 `ohosArm64`，保留 `com.tencent.mmkv.kmp` API。
 
@@ -80,7 +82,7 @@ classDiagram
 | iOS | `iosArm64`、`iosSimulatorArm64`、`iosX64` | 最低部署 iOS 13.0；编译/链接需要 macOS / Xcode |
 | OpenHarmony | `ohosArm64` | OHOS Native SDK；宿主提供应用私有可写目录并打包最终 `.so` |
 
-当前发布使用 Kotlin `2.2.21-1.0.0` 的 OpenHarmony 工具链。普通 Kotlin `2.2.21` 不提供 `ohosArm64()`；建议消费者使用同一工具链。仓库构建基线为 JDK 17 / Gradle 8.14.3 / AGP 8.10.1。OHOS 最低系统版本尚未由设备验收确定。
+本 RC 构建使用 Kotlin `2.2.21-1.0.0` 的 OpenHarmony 工具链。普通 Kotlin `2.2.21` 不提供 `ohosArm64()`；建议消费者使用同一工具链。仓库构建基线为 JDK 17 / Gradle 8.14.3 / AGP 8.10.1。OHOS 最低系统版本尚未由设备验收确定。
 
 ## 安装
 
@@ -102,7 +104,7 @@ dependencyResolutionManagement {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-5")
+            implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-6-rc.1")
         }
     }
 }
@@ -148,6 +150,6 @@ val name = store.decodeString("name")
 - [GitHub Releases](https://github.com/gycrosskit/mmkv-ohos/releases)：版本与 Maven 归档；JitPack 从相同版本 Release 提供远程依赖。
 - [GitHub Issues](https://github.com/gycrosskit/mmkv-ohos/issues)：提供版本、平台、初始化方式及最小复现。
 
-已有验证覆盖 Android 消费编译、iOS Framework 链接、OHOS 动态库/可执行文件链接，以及鸿蒙模拟器上的原生 C bridge 读写。ArkTS 宿主调用、真机运行及与 ArkTS MMKV 共存尚未验证；KMP 链接结果不等于完整宿主验收。
+历史 `2.4.2-ohos-2.2.21-5` 验证覆盖 Android 消费编译、iOS Framework 链接、OHOS 动态库/可执行文件链接，以及鸿蒙模拟器上的原生 C bridge 读写。ArkTS 宿主调用、真机运行及与 ArkTS MMKV 共存尚未验证；KMP 链接结果不等于完整宿主验收。
 
 源码和衍生代码沿用上游 BSD 3-Clause 许可；第三方依赖的许可与声明一并见 [LICENSE.TXT](LICENSE.TXT)。
