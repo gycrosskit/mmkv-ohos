@@ -1,3 +1,9 @@
+## Source maintenance — CMP sample cleanup
+
+- 删除上游 CMP 示例及 Android/desktop/iOS 宿主和专用构建接线，保留 Core/KMP 生产逻辑、公共 API、有效库测试及 BSD-3-Clause 来源许可。
+- 当前可消费版本继续使用已验证的 `2.4.2-ohos-2.2.21-5`；原 Maven 制品本来不包含 CMP 示例，此次仅维护源码，不另发新制品。
+- 补充源码边界回归并同步 README、KMP 接入与功能文档。既有版本发布与验收范围以[对应 Release](https://github.com/gycrosskit/mmkv-ohos/releases/tag/2.4.2-ohos-2.2.21-5)和功能页历史记录为准。
+
 # MMKV Change Log
 ## v2.4.2 / 2026-08-21
 

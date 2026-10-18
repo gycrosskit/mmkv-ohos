@@ -1,5 +1,11 @@
 # Publishing MMKV Kotlin Multiplatform
 
+This is the upstream Maven Central workflow; this fork publishes through
+JitPack/Release as described in [DEVELOPMENT.md](DEVELOPMENT.md).
+Source maintenance removes the CMP sample and its device-launch commands.
+Consumers continue using the verified `2.4.2-ohos-2.2.21-5` artifacts, which never included the sample; no new artifact release is needed. The original instructions remain in the
+[2.4.2-ohos-2.2.21-5 snapshot](https://github.com/gycrosskit/mmkv-ohos/blob/2.4.2-ohos-2.2.21-5/KMP/PUBLISHING.md).
+
 Publish from macOS so all Android and iOS target artifacts are produced by the
 same build.
 
@@ -60,68 +66,9 @@ KMP/gradlew -p KMP :mmkv:connectedAndroidDeviceTest \
   --project-cache-dir "$PWD/KMP/build/gradle-project-cache"
 ```
 
-Before release, also install the sample as an external consumer of
-`com.tencent:mmkv-kmp:2.4.2` on physical Android and iOS devices. Opting into
-the sample with `MMKV_USE_PUBLISHED=true` disables its unpublished desktop
-target and replaces `project(":mmkv")` with the root KMP coordinate:
-
-```bash
-KMP/gradlew -p KMP :sample:composeApp:installDebug \
-  -PMMKV_INCLUDE_SAMPLE=true \
-  -PMMKV_USE_PUBLISHED=true \
-  -PMMKV_LOCAL_REPOSITORY="$LOCAL_REPO" \
-  --project-cache-dir "$PWD/KMP/build/gradle-project-cache"
-```
-
-For iOS, refresh the local sample workspace and prepare the framework before
-invoking Xcode. Supplying the Xcode environment explicitly lets Gradle sync the
-Compose resources without creating a project-root `.gradle` directory:
-
-```bash
-KMP/gradlew -p KMP :sample:composeApp:podInstall \
-  -PMMKV_INCLUDE_SAMPLE=true \
-  -PMMKV_USE_PUBLISHED=true \
-  -PMMKV_LOCAL_REPOSITORY="$LOCAL_REPO" \
-  --project-cache-dir "$PWD/KMP/build/gradle-project-cache"
-
-ARCHS=arm64 \
-PLATFORM_NAME=iphoneos \
-SDK_NAME=iphoneos \
-CONFIGURATION=Debug \
-TARGET_BUILD_DIR="$PWD/KMP/build/ios-device-framework" \
-UNLOCALIZED_RESOURCES_FOLDER_PATH=compose-resources \
-KMP/gradlew -p KMP :sample:composeApp:syncFramework \
-  -Pkotlin.native.cocoapods.platform=iphoneos \
-  -Pkotlin.native.cocoapods.archs=arm64 \
-  -Pkotlin.native.cocoapods.configuration=Debug \
-  -PMMKV_INCLUDE_SAMPLE=true \
-  -PMMKV_USE_PUBLISHED=true \
-  -PMMKV_LOCAL_REPOSITORY="$LOCAL_REPO" \
-  --project-cache-dir "$PWD/KMP/build/gradle-project-cache"
-
-IOS_DEVICE_UDID="<ID shown by xcodebuild for the connected iPhone>"
-xcodebuild \
-  -workspace KMP/sample/iosApp/iosApp.xcworkspace \
-  -scheme iosApp \
-  -configuration Debug \
-  -destination "id=$IOS_DEVICE_UDID" \
-  -derivedDataPath KMP/build/ios-device-derived \
-  OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED=YES \
-  build
-
-xcrun devicectl device install app \
-  --device "$IOS_DEVICE_UDID" \
-  KMP/build/ios-device-derived/Build/Products/Debug-iphoneos/iosApp.app
-xcrun devicectl device process launch \
-  --device "$IOS_DEVICE_UDID" \
-  --terminate-existing \
-  --console \
-  com.tencent.mmkvdemo
-```
-
-Both sample apps run `verifyMMKVConsumer()` during startup. A successful launch
-checks the native version, key/value round trips, namespace access, and
-idempotent wrapper close behavior before rendering the UI.
+For this fork's non-UI external consumer, use the build and linking commands
+in [DEVELOPMENT.md](DEVELOPMENT.md). Those compile/link checks do not replace
+physical-device startup or storage verification.
 
 Verify that `KMP/build/local-maven/com/tencent` contains:
 

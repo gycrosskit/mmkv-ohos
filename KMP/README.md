@@ -1,6 +1,6 @@
 # MMKV Kotlin Multiplatform（OpenHarmony 适配）
 
-2026-10-08 的 Core 三端消费映射、候选修复和未验收范围见[功能与平台差异](../docs/功能与平台差异.md)；下文已有 tag 的验收保留为历史事实，修复交付版本为 `2.4.2-ohos-2.2.21-5`，发布状态以 Release 为准。
+当前可消费版本为 `2.4.2-ohos-2.2.21-5`，发布状态以[对应 Release](https://github.com/gycrosskit/mmkv-ohos/releases/tag/2.4.2-ohos-2.2.21-5)为准。当前源码删除了上游 CMP 示例和专用宿主；该版本 Maven 制品本来不包含示例，Core/KMP 公共能力和消费版本保持不变，不另发新制品。功能与设备验收边界见[功能与平台差异](../docs/功能与平台差异.md)。
 
 本分支基于 [Tencent/MMKV](https://github.com/Tencent/MMKV) 2.4.2，保留 `com.tencent.mmkv.kmp` API，
 增加 `ohosArm64`。源码及衍生代码继续遵循上游 BSD 3-Clause 许可证。
@@ -46,7 +46,7 @@ iOS 最低部署版本为 13.0；Apple Silicon 模拟器运行时从 iOS 14 开�
 消费者只依赖根坐标：
 
 ```text
-com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-4
+com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-5
 ```
 
 Gradle 根据 Kotlin Multiplatform 元数据选择 Android、iOS 或鸿蒙产物，无需直接声明平台产物。

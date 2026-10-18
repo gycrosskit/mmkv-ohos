@@ -2,6 +2,8 @@
 
 本库提供基础设施 Core，原生宿主与 Kuikly 使用相同平台实现；没有独立 UI 模块。三端消费入口、公开功能组、平台限制及 **2.4.2-ohos-2.2.21-5**的验证范围见 [功能与平台差异](docs/功能与平台差异.md)。发布状态以对应 [Release](https://github.com/gycrosskit/mmkv-ohos/releases/tag/2.4.2-ohos-2.2.21-5) 为准；设备验收边界见功能页。
 
+当前源码已删除上游 CMP 示例及专用宿主/构建接线；Core、原生与 KMP 库保持不变。消费继续沿用已验证版本 `2.4.2-ohos-2.2.21-5`，其 Maven 产物本来就不包含 CMP 示例；此次源码维护不发布新制品。当前验证入口见 [开发与验证](KMP/DEVELOPMENT.md)。
+
 为 Android、iOS 和 OpenHarmony 的 Kotlin Multiplatform 共享代码提供 MMKV 键值存储。基于 [Tencent/MMKV 2.4.2](https://github.com/Tencent/MMKV)，在上游实验性 KMP 模块中增加 `ohosArm64`，保留 `com.tencent.mmkv.kmp` API。
 
 ## 架构与调用流程

@@ -3,20 +3,15 @@ MMKV 是基于 mmap 内存映射的 key-value 组件，底层序列化/反序列
 
 ## Kotlin Multiplatform 指南
 
-v2.4.2 的 Kotlin Multiplatform 包为实验性功能，目前支持 Android 与 iOS；
-后续版本可能调整 API 或产物结构。在共享模块中引入：
+本 fork 当前可消费版本为 [`2.4.2-ohos-2.2.21-5`](https://github.com/gycrosskit/mmkv-ohos/releases/tag/2.4.2-ohos-2.2.21-5)，基于上游 2.4.2，支持 Android、`iosArm64`、`iosSimulatorArm64`、`iosX64` 和 `ohosArm64`。当前源码删除 CMP 示例及宿主，已验证 Maven 制品本来不包含示例，继续沿用该版本，不另发新制品。
 
 ```kotlin
-kotlin {
-    sourceSets {
-        commonMain.dependencies {
-            implementation("com.tencent:mmkv-kmp:2.4.2")
-        }
-    }
+commonMain.dependencies {
+    implementation("com.github.gycrosskit.mmkv-ohos:mmkv-kmp:2.4.2-ohos-2.2.21-5")
 }
 ```
 
-支持 Android、`iosArm64`、`iosSimulatorArm64` 和 `iosX64`。初始化与打包说明请参考 [Kotlin Multiplatform 文档](./KMP/README.md)。
+仓库使用 JitPack；初始化、生命周期与打包边界见 [KMP 指南](./KMP/README.md)。当前维护范围为 Core/KMP，已删除上游 CMP 示例及其宿主；以下保留上游各独立平台说明，它们的坐标和 API 不等于本 fork KMP 产物。
 
 ## MMKV 源起
 在微信客户端的日常运营中，时不时就会爆发特殊文字引起系统的 crash，[参考文章](https://mp.weixin.qq.com/s?__biz=MzAwNDY1ODY2OQ==&mid=2649286826&idx=1&sn=35601cb1156617aa235b7fd4b085bfc4)，文章里面设计的技术方案是在关键代码前后进行计数器的加减，通过检查计数器的异常，来发现引起闪退的异常文字。在会话列表、会话界面等有大量 cell 的地方，希望新加的计时器不会影响滑动性能；另外这些计数器还要永久存储下来——因为闪退随时可能发生。这就需要一个性能非常高的通用 key-value 存储组件，我们考察了 SharedPreferences、NSUserDefaults、SQLite 等常见组件，发现都没能满足如此苛刻的性能要求。考虑到这个防 crash 方案最主要的诉求还是实时写入，而 mmap 内存映射文件刚好满足这种需求，我们尝试通过它来实现一套 key-value 组件。
