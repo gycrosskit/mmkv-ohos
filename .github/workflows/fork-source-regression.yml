@@ -57,7 +57,7 @@ jobs:
         GRADLE
     - name: Run Maven metadata contracts
       run: |
-        python3 .ci-shared/templates/ci-run.py --log ci-diagnostics/metadata.log -- python3 scripts/test-jitpack-metadata.py
+        python3 .ci-shared/templates/ci-run.py --log ci-diagnostics/metadata.log -- python3 Scripts/test-jitpack-metadata.py
     - name: Require the Android SDK
       run: |
         test -f "$ANDROID_HOME/platforms/android-35/android.jar"
